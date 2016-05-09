@@ -1,0 +1,56 @@
+#!/usr/bin/ruby
+
+require "sinatra"
+
+$brand = "Git Tidy"
+$base_dir = ENV['HOME'] + "/yast"
+
+# HTML tag
+def t(tag, content)
+  "<#{tag}>#{content}</#{tag}>"
+end
+N = "\n"
+
+def title(s)
+  t("title", s) + N + t("h1", s) + N
+end
+
+get "/" do
+  page = ""
+  page << title($brand)
+
+  entries = nil
+  Dir.chdir $base_dir do
+    entries = Dir.glob("*/").sort
+  end
+
+  links = entries.map do |e|
+    e.chomp!('/')
+    "<a href='/repo/#{e}'>#{e}</a>"
+  end
+  page << links.join(" ")
+
+  page
+end
+
+get "/repo/:repo" do
+  repo = params["repo"]
+  page = ""
+
+  page << title("#{repo} - #{$brand}")
+
+  Dir.chdir $base_dir + '/' + repo do
+    git_branch = `git branch -vv`
+    page << "<h2>branch</h2>"
+    page << pre(git_branch)
+
+    git_status = `git status --porcelain`
+    page << "<h2>status</h2>"
+    page << pre(git_status)
+  end
+  page
+end
+
+def pre(s)
+  "<pre>#{s}</pre>"
+end
